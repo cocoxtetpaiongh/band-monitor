@@ -3,42 +3,95 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BTC Band Monitor</title>
+<title>📊 BTC Band Monitor</title>
 <style>
-  body { font-family: system-ui, sans-serif; background:#fafafa; color:#222; text-align:center; padding:2em;}
-  h1 { font-size:1.8em; margin-bottom:0.2em;}
-  .emoji {font-size:2.5em;}
-  pre {text-align:left; display:inline-block; background:#f4f4f4; padding:1em; border-radius:6px;}
-  .footer {margin-top:2em; font-size:0.9em; color:#666;}
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    text-align: center;
+    padding: 1.5em;
+    color: #222;
+    background: #fafafa;
+  }
+  h1 {
+    font-size: 1.6em;
+    margin-bottom: 0.2em;
+  }
+  .emoji { font-size: 3em; margin: 0.1em 0; }
+  .prediction {
+    font-size: 1.3em;
+    font-weight: 600;
+    margin-bottom: 0.3em;
+  }
+  .meta, .footer {
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 0.5em;
+  }
+  pre {
+    text-align: left;
+    background: #f5f5f5;
+    display: inline-block;
+    padding: 1em;
+    border-radius: 8px;
+    margin-top: 1em;
+    width: 95%;
+    max-width: 600px;
+    overflow-x: auto;
+  }
+  .error { color: #b00; font-weight: 500; }
 </style>
 </head>
 <body>
-<h1>📊 BTC Band Monitor</h1>
-<div id="summary">Loading data...</div>
-<pre id="raw"></pre>
-<p class="footer">Auto-refreshes every 5 minutes<br>
-Source: Binance API · Hosted on GitHub Pages</p>
+
+<h1>📈 BTC Band Monitor</h1>
+<div id="summary">Loading latest BTC data...</div>
+
+<div class="footer">
+  Auto-refreshes every 5 minutes<br>
+  Source: Binance / CoinGecko · Hosted on GitHub Pages
+</div>
 
 <script>
-async function load(){
+async function load() {
+  const box = document.getElementById("summary");
   try {
-    const res = await fetch('btc.json?_=' + Date.now());
-    const data = await res.json();
-    const sum = `
-      <div class="emoji">${data.emoji || ''}</div>
-      <h2>${data.prediction || 'No data'}</h2>
-      <p>Price: <b>${data.last}</b> USDT<br>
-      Trend: ${data.trend} · RVOL: ${data.rvol}<br>
-      Safe Bands: ${data.safe_lower} – ${data.safe_upper}</p>
-      <p><small>Updated ${data.time}</small></p>`;
-    document.getElementById('summary').innerHTML = sum;
-    document.getElementById('raw').textContent = JSON.stringify(data, null, 2);
-  } catch(e){
-    document.getElementById('summary').textContent = '⚠️ Failed to load btc.json';
+    const res = await fetch("btc.json?_=" + Date.now());
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const d = await res.json();
+
+    if (d.error) {
+      box.innerHTML = `
+        <div class="emoji">⚪</div>
+        <div class="prediction error">${d.prediction}</div>
+        <div class="meta">Error: ${d.error}</div>
+        <pre>${JSON.stringify(d, null, 2)}</pre>`;
+      return;
+    }
+
+    box.innerHTML = `
+      <div class="emoji">${d.emoji || "⚪"}</div>
+      <div class="prediction">${d.prediction || "no data"}</div>
+      <div class="meta">
+        Price: <b>${d.last ?? "?"}</b> USDT<br>
+        Trend: ${d.trend ?? "-"} · RVOL: ${d.rvol ?? "-"}<br>
+        Safe Bands: ${d.safe_lower ?? "-"} – ${d.safe_upper ?? "-"}<br>
+        Source: ${d.source ?? "unknown"}
+      </div>
+      <div class="meta" style="margin-top:0.3em;">
+        Updated ${d.time ?? ""}
+      </div>
+      <pre>${JSON.stringify(d, null, 2)}</pre>`;
+  } catch (e) {
+    box.innerHTML = `
+      <div class="emoji">⚠️</div>
+      <div class="prediction error">Failed to load btc.json</div>
+      <div class="meta">${e}</div>`;
   }
 }
+
 load();
 setInterval(load, 300000); // refresh every 5 min
 </script>
+
 </body>
 </html>
