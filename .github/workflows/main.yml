@@ -1,0 +1,23 @@
+name: BTC 5min Update
+on:
+  schedule:
+    - cron: "*/10 * * * *"  # every 10 minutes
+  workflow_dispatch:        # manual trigger
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: |
+          pip install requests
+          python btc_analysis.py
+      - name: Commit results
+        run: |
+          git config user.name "cocoxtetpaiongh"
+          git config user.email "cocoxtetpaiongh@users.noreply.github.com"
+          git add btc.json
+          git commit -m "Update BTC data" || echo "No changes"
+          git push
