@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC Band Monitor</title>
+<style>
+  body { font-family: system-ui, sans-serif; background:#fafafa; color:#222; text-align:center; padding:2em;}
+  h1 { font-size:1.8em; margin-bottom:0.2em;}
+  .emoji {font-size:2.5em;}
+  pre {text-align:left; display:inline-block; background:#f4f4f4; padding:1em; border-radius:6px;}
+  .footer {margin-top:2em; font-size:0.9em; color:#666;}
+</style>
+</head>
+<body>
+<h1>📊 BTC Band Monitor</h1>
+<div id="summary">Loading data...</div>
+<pre id="raw"></pre>
+<p class="footer">Auto-refreshes every 5 minutes<br>
+Source: Binance API · Hosted on GitHub Pages</p>
+
+<script>
+async function load(){
+  try {
+    const res = await fetch('btc.json?_=' + Date.now());
+    const data = await res.json();
+    const sum = `
+      <div class="emoji">${data.emoji || ''}</div>
+      <h2>${data.prediction || 'No data'}</h2>
+      <p>Price: <b>${data.last}</b> USDT<br>
+      Trend: ${data.trend} · RVOL: ${data.rvol}<br>
+      Safe Bands: ${data.safe_lower} – ${data.safe_upper}</p>
+      <p><small>Updated ${data.time}</small></p>`;
+    document.getElementById('summary').innerHTML = sum;
+    document.getElementById('raw').textContent = JSON.stringify(data, null, 2);
+  } catch(e){
+    document.getElementById('summary').textContent = '⚠️ Failed to load btc.json';
+  }
+}
+load();
+setInterval(load, 300000); // refresh every 5 min
+</script>
+</body>
+</html>
