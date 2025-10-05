@@ -1,35 +1,28 @@
-import requests, statistics, json
+import requests, statistics, json, time
 from datetime import datetime
 
-def get_btc_data():
-    """
-    Fetches recent BTC/USDT 5-minute interval kline data from Binance API.
-    Returns a list of klines or an empty list on error.
-    """
+def get_btc_data(retries=3, delay=5):
     url = "https://api.binance.com/api/v3/klines"
     params = {"symbol": "BTCUSDT", "interval": "5m", "limit": 120}
-    try:
-        resp = requests.get(url, params=params, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        if not isinstance(data, list) or not data:
-            raise ValueError("Unexpected response format or empty data")
-        return data
-    except Exception as e:
-        print(f"Failed to fetch data: {e}")
-        return []
+    for attempt in range(retries):
+        try:
+            r = requests.get(url, params=params, timeout=10)
+            r.raise_for_status()
+            data = r.json()
+            if isinstance(data, list) and len(data) >= 20:
+                return data
+        except Exception as e:
+            print(f"⚠️ Attempt {attempt+1} failed: {e}")
+            time.sleep(delay)
+    print("❌ Failed to fetch data after retries.")
+    return []
 
 def compute(data):
-    """
-    Computes SMA, Bollinger Bands, EMAs, trend, volume stats, and prediction based on kline data.
-    Returns a dictionary of results.
-    """
     closes = [float(c[4]) for c in data]
     vols   = [float(c[5]) for c in data]
-    window = closes[-20:]
-    sma = sum(window) / 20
-    std = statistics.pstdev(window)
-    upper, lower = sma + 2 * std, sma - 2 * std
+    sma = sum(closes[-20:]) / 20
+    std = statistics.pstdev(closes[-20:])
+    upper, lower = sma + 2*std, sma - 2*std
     safeU, safeL = upper * 1.005, lower * 0.995
 
     def ema(period):
@@ -41,10 +34,10 @@ def compute(data):
 
     ema12, ema26 = ema(12), ema(26)
     trend = "UP" if ema12 > ema26 else "DOWN"
-
     avg_vol20 = sum(vols[-20:]) / 20
     rvol = vols[-1] / avg_vol20 if avg_vol20 else 0
     last = closes[-1]
+
     cross = "ABOVE" if last > safeU else "BELOW" if last < safeL else "no cross"
 
     nearU = sum(1 for c in closes[-12:] if abs(upper - c) <= (upper - lower) * 0.15)
@@ -83,7 +76,15 @@ def compute(data):
 if __name__ == "__main__":
     data = get_btc_data()
     if not data:
-        print("No data to process.")
+        fallback = {
+            "time": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+            "error": "Failed to fetch Binance data.",
+            "prediction": "no data",
+            "emoji": "⚪"
+        }
+        print("⚠️ No data fetched, writing fallback JSON.")
+        with open("btc.json", "w") as f:
+            json.dump(fallback, f, indent=2)
     else:
         result = compute(data)
         with open("btc.json", "w") as f:
