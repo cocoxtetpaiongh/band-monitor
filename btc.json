@@ -1,6 +1,20 @@
 {
-  "time": "2025-10-05 17:24 UTC",
-  "error": "Failed to fetch Binance data.",
-  "prediction": "no data",
-  "emoji": "\u26aa"
+  "time": "2025-10-05 17:35 UTC",
+  "last": 123152.56,
+  "volume": 0.0,
+  "rvol": 0.0,
+  "sma20": 123087.14,
+  "upper": 123438.64,
+  "lower": 122735.63,
+  "safe_upper": 124055.84,
+  "safe_lower": 122121.95,
+  "ema12": 123159.31,
+  "ema26": 123101.65,
+  "trend": "UP",
+  "freq_upper": "16.7%",
+  "freq_lower": "8.3%",
+  "cross": "no cross",
+  "prediction": "Weak UP \u2013 Low Volume",
+  "emoji": "\u26aa",
+  "source": "CoinGecko"
 }
